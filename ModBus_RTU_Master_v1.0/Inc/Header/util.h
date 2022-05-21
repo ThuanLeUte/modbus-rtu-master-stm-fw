@@ -18,6 +18,15 @@
 #include "mcu_application.h"
 
 /* Public defines ----------------------------------------------------- */
+#define LOW_BYTE(word)                    (word & 0x00FF)
+#define HIGH_BYTE(word)                   (word >> 8)
+
+#define BIT_SET(value, bit)               ((value) |= (1UL << (bit)))
+#define BIT_CLEAR(value, bit)             ((value) &= ~(1UL << (bit)))
+
+#define BIT_WRITE(value, bit, bit_value)  (bit_value ? BIT_SET(value, bit) : BIT_CLEAR(value, bit))
+#define BIT_READ(value, bit)              (((value) >> (bit)) & 0x01)
+
 /* Public enumerate/structure ----------------------------------------- */
 /* Public macros ------------------------------------------------------ */
 /* Public variables --------------------------------------------------- */
@@ -47,6 +56,16 @@ static uint16_t util_crc16_update(uint16_t crc, uint8_t a)
   }
 
   return crc;
+}
+
+static inline uint16_t util_word(uint8_t h_byte, uint8_t l_byte)
+{
+  uint16_t word;
+  
+  word = (uint16_t)(h_byte << 8);
+  word = word + l_byte;
+
+  return word;
 }
 
 #endif /* __UTIL_H */

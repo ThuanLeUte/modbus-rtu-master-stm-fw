@@ -67,7 +67,7 @@ uint16_t Error = 0;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void SystemClock_Config(void);
-void ModbusMaster_BeginTransmit(void);
+void modbus_master_start_transmit(void);
 void ModBusMasterEnableRS485Transmit(void);
 void ModBusMasterDisableRS485Transmit(void);
 void ModBusMasterEnableRS485Receive(void);
@@ -118,7 +118,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	
 	HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
-	ModbusMaster_Begin();
+	modbus_master_init();
 	modbus_complete_transmit_req = 0x00;
 	
 	
@@ -204,8 +204,8 @@ void putstring_int_debug(void){
 void test1(void){
 	ModBusMasterDisableRS485Receive();
 	ModBusMasterEnableRS485Transmit();
-	if(ModbusMaster_ReadHoldingRegisters(0x01, 0x0008, 0x0001) == 0x00){
-		data[0] = ModbusMaster_GetResponseBuffer(0);
+	if(modbus_master_read_holding_register(0x01, 0x0008, 0x0001) == 0x00){
+		data[0] = modbus_master_get_response_buffer(0);
 	}
 	HAL_Delay(100);
 }
@@ -216,15 +216,15 @@ void test2(void){
 	
 	ModBusMasterDisableRS485Receive();
 	ModBusMasterEnableRS485Transmit();
-	if(ModbusMaster_ReadInputRegisters(0x01, 0x0000, 0x0008) == 0x00){
-		data[0] = ModbusMaster_GetResponseBuffer(0);
-		data[1] = ModbusMaster_GetResponseBuffer(1);
-		data[2] = ModbusMaster_GetResponseBuffer(2);
-		data[3] = ModbusMaster_GetResponseBuffer(3);
-		data[4] = ModbusMaster_GetResponseBuffer(4);
-		data[5] = ModbusMaster_GetResponseBuffer(5);
-		data[6] = ModbusMaster_GetResponseBuffer(6);
-		data[7] = ModbusMaster_GetResponseBuffer(7);
+	if(modbus_master_read_input_register(0x01, 0x0000, 0x0008) == 0x00){
+		data[0] = modbus_master_get_response_buffer(0);
+		data[1] = modbus_master_get_response_buffer(1);
+		data[2] = modbus_master_get_response_buffer(2);
+		data[3] = modbus_master_get_response_buffer(3);
+		data[4] = modbus_master_get_response_buffer(4);
+		data[5] = modbus_master_get_response_buffer(5);
+		data[6] = modbus_master_get_response_buffer(6);
+		data[7] = modbus_master_get_response_buffer(7);
 	}
 	else {
 		Error++;

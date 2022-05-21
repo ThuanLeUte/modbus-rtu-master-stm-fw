@@ -1,56 +1,41 @@
 #ifndef __MODBUS_RTU_MASTER_H
 #define __MODBUS_RTU_MASTER_H
 
-#include <stdint.h>
 #include "mcu_application.h"
 #include "util.h"
-#include "word.h"
 #include "queue_circle_array.h"
 
+extern uint8_t modbus_adu[128];
+extern uint8_t modbus_adu_size;
+extern uint8_t i;
+extern uint8_t quantity;
+extern uint16_t crc16;
+extern uint8_t byte_left;
+extern uint32_t modbus_loop_timeout;
+extern uint8_t modbus_status;
 
-
-extern	uint8_t 	modbus_adu[128];
-extern  uint8_t 	modbus_adu_size;
-extern  uint8_t 	i;
-extern	uint8_t   u8Quantity;
-extern  uint16_t 	u16CRC;
-extern  uint8_t 	u8BytesLeft;
-extern	uint32_t 	u32ModBusLoopTimeout;
-extern  uint8_t 	u8ModBusStatus;
-	
-	
-extern volatile uint8_t 	modbus_complete_transmit_req;
-
+extern volatile uint8_t modbus_complete_transmit_req;
 
 extern struct_queue_array modbus_master_tx_queue;
 extern struct_queue_array modbus_master_rx_queue;
 
-
-
-
-void ModbusMaster_Begin(void);
-void ModbusMaster_ClearADU(void);
-void ModbusMaster_BeginTransmit(void);
-uint16_t ModbusMaster_GetResponseBuffer(uint8_t Index);
-void ModbusMaster_ClearResponseBuffer(void);
-uint8_t ModbusMaster_SetTransmitBuffer(uint8_t Index, uint16_t Value);
+void modbus_master_init(void);
+void modbus_master_clear_adu(void);
+void modbus_master_start_transmit(void);
+uint16_t modbus_master_get_response_buffer(uint8_t index);
 uint32_t ModbusMaster_GetMillis(void);
-uint8_t ModbusMaster_Execute_Transaction(uint8_t ModbusFunction);
-uint8_t ModbusMaster_Check_SlaveResponse(uint8_t u8ModbusFunction);
+uint8_t modbus_master_execute_transaction(uint8_t modbus_function);
 
-uint8_t ModbusMaster_readCoils(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitQuantity);													//0x01
-uint8_t ModbusMaster_readDiscreteInputs(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitByteQuantity);							//0x02
-uint8_t ModbusMaster_ReadHoldingRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitQuantity);								//0x03
-uint8_t ModbusMaster_ReadInputRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16ReadQuantity);								//0x04
-uint8_t ModbusMaster_WriteSingleCoil(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint8_t u8State);														//0x05
-uint8_t ModbusMaster_WriteSingleRegister(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16WriteValue);								//0x06
-uint8_t ModbusMaster_WriteMultipleCoils(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16BitByteQuantity); 						//0x0F
-uint8_t ModbusMaster_WriteMultipleRegisters(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16WriteQuantity);  				//0x10
-uint8_t ModbusMaster_MaskWriteRegister(uint8_t u8SlaveID,uint16_t u16WriteAddress, uint16_t u16AndMask, uint16_t u16OrMask); 	//0x16
-uint8_t ModbusMaster_ReadWriteMultipleRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16ReadQuantity, 
-																								uint16_t u16WriteAddress, uint16_t u16WriteQuantity);													//0x17						
+uint8_t modbus_master_read_coils(uint8_t slave_id, uint16_t read_addr, uint16_t size);                                 // 0x01
+uint8_t modbus_master_read_discrete_input(uint8_t slave_id, uint16_t read_addr, uint16_t size);                        // 0x02
+uint8_t modbus_master_read_holding_register(uint8_t slave_id, uint16_t read_addr, uint16_t size);                      // 0x03
+uint8_t modbus_master_read_input_register(uint8_t slave_id, uint16_t read_addr, uint16_t size);                        // 0x04
+uint8_t modbus_master_write_single_coil(uint8_t slave_id, uint16_t write_addr, uint8_t state);                         // 0x05
+uint8_t modbus_master_write_single_register(uint8_t slave_id, uint16_t write_addr, uint16_t value);                    // 0x06
+uint8_t modbus_master_write_mutiple_coils(uint8_t slave_id, uint16_t write_addr, uint16_t size);                       // 0x0F
+uint8_t modbus_master_write_mutiple_register(uint8_t slave_id, uint16_t write_addr, uint16_t size);                    // 0x10
+uint8_t modbus_master_mask_write_register(uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask); // 0x16
+uint8_t modbus_maste_read_mutiple_registers(uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
+                                            uint16_t write_addr, uint16_t write_size); // 0x17
 
-
-
-#endif  // __MODBUS_RTU_MASTER_H
-
+#endif // __MODBUS_RTU_MASTER_H
