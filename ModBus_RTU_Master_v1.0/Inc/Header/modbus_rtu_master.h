@@ -9,8 +9,8 @@
 
 
 
-extern	uint8_t 	u8ModbusADU[128];
-extern  uint8_t 	u8ModbusADUSize;
+extern	uint8_t 	modbus_adu[128];
+extern  uint8_t 	modbus_adu_size;
 extern  uint8_t 	i;
 extern	uint8_t   u8Quantity;
 extern  uint16_t 	u16CRC;
@@ -19,7 +19,7 @@ extern	uint32_t 	u32ModBusLoopTimeout;
 extern  uint8_t 	u8ModBusStatus;
 	
 	
-extern volatile uint8_t 	ModbusMaster_CompleteTransmitReQ;
+extern volatile uint8_t 	modbus_complete_transmit_req;
 
 
 extern struct_queue_array modbus_master_tx_queue;

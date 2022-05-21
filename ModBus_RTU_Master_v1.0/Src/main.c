@@ -119,7 +119,7 @@ int main(void)
 	
 	HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
 	ModbusMaster_Begin();
-	ModbusMaster_CompleteTransmitReQ = 0x00;
+	modbus_complete_transmit_req = 0x00;
 	
 	
 	//test1();
@@ -278,7 +278,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 		if(Queue_IsEmpty(&modbus_master_tx_queue) == 1){
 			//"idle()"
 			//ModBusMasterDisableRS485Transmit();
-			ModbusMaster_CompleteTransmitReQ = 0x01;
+			modbus_complete_transmit_req = 0x01;
 			ModBusMasterEnableRS485Receive();
 		}
 		else {

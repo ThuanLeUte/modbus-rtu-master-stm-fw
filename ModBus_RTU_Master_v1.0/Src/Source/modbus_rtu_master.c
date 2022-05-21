@@ -31,51 +31,51 @@ extern UART_HandleTypeDef huart1;
 #define MODBUS_COMPLETE_TRANSACTION                   (0x01)
 #define MODBUS_NOT_COMPLETE_TRANSACTION               (0x00)
 
+#define MODEBUS_MASTER_TX_BUFFER_SIZE                 (64)
+#define MODEBUS_MASTER_RX_BUFFER_SIZE                 (64)
+
 struct_queue_array modbus_master_tx_queue;
 struct_queue_array modbus_master_rx_queue;
 
-uint8_t u8ModbusMaster_QueueTXBuffer[64];
-uint8_t u8ModbusMaster_QueueRXBuffer[64];
+static uint8_t modbus_master_tx_buffer[64];
+static uint8_t modbus_master_rx_buffer[64];
 
-static const uint8_t u8Modbus_TransmitBufferSize = 64;
-static const uint8_t u8Modbus_ResponseBufferSize = 64;
+static uint16_t modbus_transmit_buffer[MODEBUS_MASTER_TX_BUFFER_SIZE]; // Data want to write to slave
+static uint16_t modbus_response_buffer[MODEBUS_MASTER_RX_BUFFER_SIZE]; // Data response from slave
+static uint8_t modbus_transmit_buffer_len = 0;
+static uint8_t modbus_response_buffer_len = 0;
 
-uint16_t u16Modbus_TransmitBuffer[u8Modbus_TransmitBufferSize]; // data want to write to slave
-uint16_t u16Modbus_ResponseBuffer[u8Modbus_ResponseBufferSize]; // data response from slave
-uint8_t u8Modbus_TransmitBufferLengh = 0;
-uint8_t u8Modbus_ResponseBufferLengh = 0;
-
-volatile uint8_t ModbusMaster_CompleteTransmitReQ = 0;
-uint8_t u8ModBusSlaveID;
-uint16_t u16ModbusReadAddress;
-uint16_t u16ModbusReadQuantity;
-uint16_t u16ModbusWriteAddress;
-uint16_t u16ModbusWriteQuantity;
+volatile uint8_t modbus_complete_transmit_req = 0;
+static uint8_t modbus_slave_id;
+static uint16_t modbus_read_addr;
+static uint16_t modbus_read_quantity;
+static uint16_t modbus_write_addr;
+static uint16_t modbus_write_quantity;
 
 // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-uint8_t u8ModbusADU[128];
-uint8_t u8ModbusADUSize = 0;
-uint8_t i = 0;
-uint8_t u8Quantity = 0;
-uint16_t u16CRC = 0xffff;
-uint8_t u8BytesLeft = 0;
-uint32_t u32ModBusLoopTimeout = 0;
-uint8_t u8ModBusStatus = ModBusStatusTransactionSuccess;
+static uint8_t modbus_adu[128];
+static uint8_t modbus_adu_size = 0;
+static uint8_t i = 0;
+static uint8_t u8Quantity = 0;
+static uint16_t u16CRC = 0xffff;
+static uint8_t u8BytesLeft = 0;
+static uint32_t u32ModBusLoopTimeout = 0;
+static uint8_t u8ModBusStatus = ModBusStatusTransactionSuccess;
 // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 void ModbusMaster_Begin(void)
 {
-  u8Modbus_TransmitBufferLengh = 0;
-  u8Modbus_ResponseBufferLengh = 0;
-  Queue_Initialize(&modbus_master_tx_queue, u8ModbusMaster_QueueTXBuffer, sizeof(u8ModbusMaster_QueueTXBuffer));
-  Queue_Initialize(&modbus_master_rx_queue, u8ModbusMaster_QueueRXBuffer, sizeof(u8ModbusMaster_QueueRXBuffer));
+  modbus_transmit_buffer_len = 0;
+  modbus_response_buffer_len = 0;
+  Queue_Initialize(&modbus_master_tx_queue, modbus_master_tx_buffer, sizeof(modbus_master_tx_buffer));
+  Queue_Initialize(&modbus_master_rx_queue, modbus_master_rx_buffer, sizeof(modbus_master_rx_buffer));
 }
 
 void ModbusMaster_ClearADU(void)
 {
   for (uint8_t k = 0; k < 128; k++)
   {
-    u8ModbusADU[k] = 0;
+    modbus_adu[k] = 0;
   }
 }
 
@@ -92,9 +92,9 @@ void ModbusMaster_BeginTransmit(void)
 
 uint16_t ModbusMaster_GetResponseBuffer(uint8_t Index)
 {
-  if (Index < u8Modbus_ResponseBufferSize)
+  if (Index < MODEBUS_MASTER_RX_BUFFER_SIZE)
   {
-    return u16Modbus_ResponseBuffer[Index];
+    return modbus_response_buffer[Index];
   }
 }
 
@@ -102,17 +102,17 @@ void ModbusMaster_ClearResponseBuffer(void)
 {
   uint8_t i;
 
-  for (i = 0; i < u8Modbus_ResponseBufferSize; i++)
+  for (i = 0; i < MODEBUS_MASTER_RX_BUFFER_SIZE; i++)
   {
-    u16Modbus_ResponseBuffer[i] = 0;
+    modbus_response_buffer[i] = 0;
   }
 }
 
 uint8_t ModbusMaster_SetTransmitBuffer(uint8_t Index, uint16_t Value)
 {
-  if (Index < u8Modbus_TransmitBufferSize)
+  if (Index < MODEBUS_MASTER_TX_BUFFER_SIZE)
   {
-    u16Modbus_TransmitBuffer[Index] = Value;
+    modbus_transmit_buffer[Index] = Value;
     return ModBusStatusTransactionSuccess;
   }
   else
@@ -125,16 +125,16 @@ void ModbusMaster_ClearTransmitBuffer(void)
 {
   uint8_t i;
 
-  for (i = 0; i < u8Modbus_TransmitBufferSize; i++)
+  for (i = 0; i < MODEBUS_MASTER_TX_BUFFER_SIZE; i++)
   {
-    u16Modbus_TransmitBuffer[i] = 0;
+    modbus_transmit_buffer[i] = 0;
   }
 }
 
 uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 {
 
-  u8ModbusADUSize = 0;
+  modbus_adu_size = 0;
   i = 0;
   u8Quantity = 0;
   u16CRC = 0xffff;
@@ -144,8 +144,8 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 
   // xxxxxxxxxxxxxxxxxxxxxxx setup ADU frame xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   //  assemble Modbus Request Application Data Unit
-  u8ModbusADU[u8ModbusADUSize++] = u8ModBusSlaveID;
-  u8ModbusADU[u8ModbusADUSize++] = u8ModbusFunction;
+  modbus_adu[modbus_adu_size++] = modbus_slave_id;
+  modbus_adu[modbus_adu_size++] = u8ModbusFunction;
 
   switch (u8ModbusFunction)
   {
@@ -155,10 +155,10 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   case MODBUS_FUNCTION_READ_INPUT_REGISTERS:
   case MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS:
 
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16ModbusReadAddress);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16ModbusReadAddress);
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16ModbusReadQuantity);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16ModbusReadQuantity);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_read_addr);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_read_addr);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_read_quantity);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_read_quantity);
 
     break;
   }
@@ -172,8 +172,8 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   case MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS:
   case MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS:
 
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16ModbusWriteAddress);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16ModbusWriteAddress);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_write_addr);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_write_addr);
 
     break;
   }
@@ -181,26 +181,26 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   switch (u8ModbusFunction)
   {
   case MODBUS_FUNCTION_WRITE_SINGLE_COIL:
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16ModbusWriteQuantity);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16ModbusWriteQuantity);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_write_quantity);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_write_quantity);
     break;
 
   case MODBUS_FUNCTION_WRITE_SINGLE_REGISTER:
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16Modbus_TransmitBuffer[0]);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16Modbus_TransmitBuffer[0]);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_transmit_buffer[0]);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_transmit_buffer[0]);
     break;
 
   case MODBUS_FUNCTION_WRITE_MUTIPLE_COILS:
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16ModbusWriteQuantity);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16ModbusWriteQuantity);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_write_quantity);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_write_quantity);
 
-    if (u16ModbusWriteQuantity % 8)
+    if (modbus_write_quantity % 8)
     {
-      u8Quantity = (u16ModbusWriteQuantity >> 3) + 1;
+      u8Quantity = (modbus_write_quantity >> 3) + 1;
     }
     else
     {
-      u8Quantity = u16ModbusWriteQuantity >> 3;
+      u8Quantity = modbus_write_quantity >> 3;
     }
 
     for (i = 0; i < u8Quantity; i++)
@@ -209,11 +209,11 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
       switch (i % 2)
       {
       case 0:
-        u8ModbusADU[u8ModbusADUSize++] = lowByte(u16Modbus_TransmitBuffer[i >> 1]);
+        modbus_adu[modbus_adu_size++] = lowByte(modbus_transmit_buffer[i >> 1]);
         break;
 
       case 1:
-        u8ModbusADU[u8ModbusADUSize++] = highByte(u16Modbus_TransmitBuffer[i >> 1]);
+        modbus_adu[modbus_adu_size++] = highByte(modbus_transmit_buffer[i >> 1]);
         break;
       }
     }
@@ -222,18 +222,18 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 
   case MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS:
   case MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS:
-    for (i = 0; i < lowByte(u16ModbusWriteQuantity); i++)
+    for (i = 0; i < lowByte(modbus_write_quantity); i++)
     {
-      u8ModbusADU[u8ModbusADUSize++] = highByte(u16Modbus_TransmitBuffer[i]);
-      u8ModbusADU[u8ModbusADUSize++] = lowByte(u16Modbus_TransmitBuffer[i]);
+      modbus_adu[modbus_adu_size++] = highByte(modbus_transmit_buffer[i]);
+      modbus_adu[modbus_adu_size++] = lowByte(modbus_transmit_buffer[i]);
     }
     break;
 
   case MODBUS_FUNCTION_MASK_WRITE_REGISTERS:
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16Modbus_TransmitBuffer[0]);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16Modbus_TransmitBuffer[0]);
-    u8ModbusADU[u8ModbusADUSize++] = highByte(u16Modbus_TransmitBuffer[1]);
-    u8ModbusADU[u8ModbusADUSize++] = lowByte(u16Modbus_TransmitBuffer[1]);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_transmit_buffer[0]);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_transmit_buffer[0]);
+    modbus_adu[modbus_adu_size++] = highByte(modbus_transmit_buffer[1]);
+    modbus_adu[modbus_adu_size++] = lowByte(modbus_transmit_buffer[1]);
 
     break;
   }
@@ -241,23 +241,23 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 
   u16CRC = 0xffff;
 
-  for (i = 0; i < u8ModbusADUSize; i++)
+  for (i = 0; i < modbus_adu_size; i++)
   {
-    u16CRC = util_crc16_update(u16CRC, u8ModbusADU[i]);
+    u16CRC = util_crc16_update(u16CRC, modbus_adu[i]);
   }
 
-  u8ModbusADU[u8ModbusADUSize++] = lowByte(u16CRC);
-  u8ModbusADU[u8ModbusADUSize++] = highByte(u16CRC);
-  u8ModbusADU[u8ModbusADUSize] = 0;
+  modbus_adu[modbus_adu_size++] = lowByte(u16CRC);
+  modbus_adu[modbus_adu_size++] = highByte(u16CRC);
+  modbus_adu[modbus_adu_size] = 0;
 
   Queue_MakeNull(&modbus_master_rx_queue);
-  ModbusMaster_CompleteTransmitReQ = 0x00;
+  modbus_complete_transmit_req = 0x00;
 
-  for (i = 0; i < u8ModbusADUSize; i++)
+  for (i = 0; i < modbus_adu_size; i++)
   {
     if (Queue_IsFull(&modbus_master_tx_queue) == 0)
     {
-      Queue_EnQueue(&modbus_master_tx_queue, u8ModbusADU[i]);
+      Queue_EnQueue(&modbus_master_tx_queue, modbus_adu[i]);
     }
     else
     {
@@ -267,18 +267,18 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 
   ModbusMaster_BeginTransmit();
 
-  while (ModbusMaster_CompleteTransmitReQ == 0x00)
+  while (modbus_complete_transmit_req == 0x00)
     ;
 
   ModbusMaster_ClearADU();
 
   u8ModBusStatus = ModBusStatusTransactionSuccess;
 
-  u8ModbusADUSize = 0;
+  modbus_adu_size = 0;
 
   u32ModBusLoopTimeout = ModbusMaster_GetMillis();
 
-  while (u8ModbusADUSize < 3)
+  while (modbus_adu_size < 3)
   {
 
     if (Queue_IsEmpty(&modbus_master_rx_queue))
@@ -287,26 +287,26 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
     }
     else
     {
-      u8ModbusADU[u8ModbusADUSize++] = Queue_DeQueue(&modbus_master_rx_queue);
+      modbus_adu[modbus_adu_size++] = Queue_DeQueue(&modbus_master_rx_queue);
     }
 
-    if (u8ModbusADUSize >= 3)
+    if (modbus_adu_size >= 3)
     {
-      if (u8ModbusADU[0] != u8ModBusSlaveID)
+      if (modbus_adu[0] != modbus_slave_id)
       {
         u8ModBusStatus = ModBusStatusInvalidSlaveID;
         return u8ModBusStatus;
       }
 
-      if ((u8ModbusADU[1] & 0x7F) != u8ModbusFunction)
+      if ((modbus_adu[1] & 0x7F) != u8ModbusFunction)
       {
         u8ModBusStatus = ModBusStatusInvalidFunction;
         return u8ModBusStatus;
       }
 
-      if (bitRead(u8ModbusADU[1], 7))
+      if (bitRead(modbus_adu[1], 7))
       {
-        u8ModBusStatus = u8ModbusADU[2];
+        u8ModBusStatus = modbus_adu[2];
         return u8ModBusStatus;
       }
     }
@@ -321,14 +321,14 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   if (u8ModBusStatus == ModBusStatusTransactionSuccess)
   {
 
-    switch (u8ModbusADU[1])
+    switch (modbus_adu[1])
     {
     case MODBUS_FUNCTION_READ_COILS:
     case MODBUS_FUNCTION_READ_DISCRETE_INPUTS:
     case MODBUS_FUNCTION_READ_HOLDING_REGISTERS:
     case MODBUS_FUNCTION_READ_INPUT_REGISTERS:
     case MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS:
-      u8BytesLeft = u8ModbusADU[2];
+      u8BytesLeft = modbus_adu[2];
       break;
 
     case MODBUS_FUNCTION_WRITE_SINGLE_COIL:
@@ -350,7 +350,7 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   {
     if (Queue_IsEmpty(&modbus_master_rx_queue) == 0)
     {
-      u8ModbusADU[u8ModbusADUSize++] = Queue_DeQueue(&modbus_master_rx_queue);
+      modbus_adu[modbus_adu_size++] = Queue_DeQueue(&modbus_master_rx_queue);
       u8BytesLeft--;
     }
     else
@@ -368,50 +368,50 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
   if (u8ModBusStatus == ModBusStatusTransactionSuccess && u8BytesLeft == 0)
   {
     u16CRC = 0xffff;
-    for (i = 0; i < (u8ModbusADUSize - 2); i++)
+    for (i = 0; i < (modbus_adu_size - 2); i++)
     {
-      u16CRC = util_crc16_update(u16CRC, u8ModbusADU[i]);
+      u16CRC = util_crc16_update(u16CRC, modbus_adu[i]);
     }
-    if ((lowByte(u16CRC) != u8ModbusADU[u8ModbusADUSize - 2] ||
-         highByte(u16CRC) != u8ModbusADU[u8ModbusADUSize - 1]))
+    if ((lowByte(u16CRC) != modbus_adu[modbus_adu_size - 2] ||
+         highByte(u16CRC) != modbus_adu[modbus_adu_size - 1]))
     {
       u8ModBusStatus = ModBusStatusInvalidCRC;
       return u8ModBusStatus;
     }
     else
     {
-      switch (u8ModbusADU[1])
+      switch (modbus_adu[1])
       {
       case MODBUS_FUNCTION_READ_COILS:
       case MODBUS_FUNCTION_READ_DISCRETE_INPUTS:
-        for (i = 0; i < u8ModbusADU[2] >> 1; i++)
+        for (i = 0; i < modbus_adu[2] >> 1; i++)
         {
-          if (i < u8Modbus_ResponseBufferSize)
+          if (i < MODEBUS_MASTER_RX_BUFFER_SIZE)
           {
-            u16Modbus_ResponseBuffer[i] = word(u8ModbusADU[(2 * i) + 4], u8ModbusADU[(2 * i) + 3]);
+            modbus_response_buffer[i] = word(modbus_adu[(2 * i) + 4], modbus_adu[(2 * i) + 3]);
           }
         }
-        u8Modbus_TransmitBufferLengh = i;
-        if (u8ModbusADU[2] % 2)
+        modbus_transmit_buffer_len = i;
+        if (modbus_adu[2] % 2)
         {
-          if (i < u8Modbus_ResponseBufferSize)
+          if (i < MODEBUS_MASTER_RX_BUFFER_SIZE)
           {
-            u16Modbus_ResponseBuffer[i] = word(0, u8ModbusADU[(2 * i) + 3]);
+            modbus_response_buffer[i] = word(0, modbus_adu[(2 * i) + 3]);
           }
         }
-        u8Modbus_TransmitBufferLengh = i + 1;
+        modbus_transmit_buffer_len = i + 1;
         break;
       case MODBUS_FUNCTION_READ_HOLDING_REGISTERS:
       case MODBUS_FUNCTION_READ_INPUT_REGISTERS:
       case MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS:
-        for (i = 0; i < (u8ModbusADU[2] >> 1); i++)
+        for (i = 0; i < (modbus_adu[2] >> 1); i++)
         {
-          if (i < u8Modbus_ResponseBufferSize)
+          if (i < MODEBUS_MASTER_RX_BUFFER_SIZE)
           {
-            u16Modbus_ResponseBuffer[i] = word(u8ModbusADU[2 * i + 3], u8ModbusADU[2 * i + 4]);
+            modbus_response_buffer[i] = word(modbus_adu[2 * i + 3], modbus_adu[2 * i + 4]);
           }
         }
-        u8Modbus_TransmitBufferLengh = i;
+        modbus_transmit_buffer_len = i;
         break;
       }
     }
@@ -428,92 +428,92 @@ uint8_t ModbusMaster_Execute_Transaction(uint8_t u8ModbusFunction)
 
 uint8_t ModbusMaster_readCoils(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitByteQuantity) // 0x01
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusReadAddress = u16ReadAddress;
-  u16ModbusReadQuantity = u16BitByteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_read_addr = u16ReadAddress;
+  modbus_read_quantity = u16BitByteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_READ_COILS);
 }
 
 uint8_t ModbusMaster_readDiscreteInputs(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitByteQuantity) // 0x02
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusReadAddress = u16ReadAddress;
-  u16ModbusReadQuantity = u16BitByteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_read_addr = u16ReadAddress;
+  modbus_read_quantity = u16BitByteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_READ_DISCRETE_INPUTS);
 }
 
 uint8_t ModbusMaster_ReadHoldingRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16BitByteQuantity) // 0x03
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusReadAddress = u16ReadAddress;
-  u16ModbusReadQuantity = u16BitByteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_read_addr = u16ReadAddress;
+  modbus_read_quantity = u16BitByteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_READ_HOLDING_REGISTERS);
 }
 
 uint8_t ModbusMaster_ReadInputRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16ReadQuantity) // 0x04
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusReadAddress = u16ReadAddress;
-  u16ModbusReadQuantity = u16ReadQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_read_addr = u16ReadAddress;
+  modbus_read_quantity = u16ReadQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_READ_INPUT_REGISTERS);
 }
 
 uint8_t ModbusMaster_WriteSingleCoil(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint8_t u8State) // 0x05
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusWriteAddress = u16WriteAddress;
+  modbus_slave_id = u8SlaveID;
+  modbus_write_addr = u16WriteAddress;
   if (u8State)
   {
-    u16ModbusWriteQuantity = 0xff00;
+    modbus_write_quantity = 0xff00;
   }
   else
   {
-    u16ModbusWriteQuantity = 0x0000;
+    modbus_write_quantity = 0x0000;
   }
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_WRITE_SINGLE_COIL);
 }
 
 uint8_t ModbusMaster_WriteSingleRegister(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16WriteValue) // 0x06
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusWriteAddress = u16WriteAddress;
-  u16ModbusWriteQuantity = 0;
-  u16Modbus_TransmitBuffer[0] = u16WriteValue;
+  modbus_slave_id = u8SlaveID;
+  modbus_write_addr = u16WriteAddress;
+  modbus_write_quantity = 0;
+  modbus_transmit_buffer[0] = u16WriteValue;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_WRITE_SINGLE_REGISTER);
 }
 
 uint8_t ModbusMaster_WriteMultipleCoils(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16BitByteQuantity) // 0x0F
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusWriteAddress = u16WriteAddress;
-  u16ModbusWriteQuantity = u16BitByteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_write_addr = u16WriteAddress;
+  modbus_write_quantity = u16BitByteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_WRITE_MUTIPLE_COILS);
 }
 
 uint8_t ModbusMaster_WriteMultipleRegisters(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16WriteQuantity) // 0x10
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusWriteAddress = u16WriteAddress;
-  u16ModbusWriteQuantity = u16WriteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_write_addr = u16WriteAddress;
+  modbus_write_quantity = u16WriteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS);
 }
 
 uint8_t ModbusMaster_MaskWriteRegister(uint8_t u8SlaveID, uint16_t u16WriteAddress, uint16_t u16AndMask, uint16_t u16OrMask) // 0x16
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusWriteAddress = u16WriteAddress;
-  u16Modbus_TransmitBuffer[0] = u16AndMask;
-  u16Modbus_TransmitBuffer[1] = u16OrMask;
+  modbus_slave_id = u8SlaveID;
+  modbus_write_addr = u16WriteAddress;
+  modbus_transmit_buffer[0] = u16AndMask;
+  modbus_transmit_buffer[1] = u16OrMask;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_MASK_WRITE_REGISTERS);
 }
 
 uint8_t ModbusMaster_ReadWriteMultipleRegisters(uint8_t u8SlaveID, uint16_t u16ReadAddress, uint16_t u16ReadQuantity,
                                                 uint16_t u16WriteAddress, uint16_t u16WriteQuantity) // 0x17
 {
-  u8ModBusSlaveID = u8SlaveID;
-  u16ModbusReadAddress = u16ReadAddress;
-  u16ModbusReadQuantity = u16ReadQuantity;
-  u16ModbusWriteAddress = u16WriteAddress;
-  u16ModbusWriteQuantity = u16WriteQuantity;
+  modbus_slave_id = u8SlaveID;
+  modbus_read_addr = u16ReadAddress;
+  modbus_read_quantity = u16ReadQuantity;
+  modbus_write_addr = u16WriteAddress;
+  modbus_write_quantity = u16WriteQuantity;
   return ModbusMaster_Execute_Transaction(MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS);
 }
