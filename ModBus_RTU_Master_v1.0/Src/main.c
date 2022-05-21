@@ -259,8 +259,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	
 	if(huart->Instance == huart1.Instance){
 		HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
-		if(Queue_IsFull(&ModbusMaster_RX_Queue) == 0){
-			Queue_EnQueue(&ModbusMaster_RX_Queue, Uart1_RxBuffer);
+		if(Queue_IsFull(&modbus_master_rx_queue) == 0){
+			Queue_EnQueue(&modbus_master_rx_queue, Uart1_RxBuffer);
 			
 		}
 		else {
@@ -275,14 +275,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	
 	if(huart->Instance == huart1.Instance){
 		
-		if(Queue_IsEmpty(&ModbusMaster_TX_Queue) == 1){
+		if(Queue_IsEmpty(&modbus_master_tx_queue) == 1){
 			//"idle()"
 			//ModBusMasterDisableRS485Transmit();
 			ModbusMaster_CompleteTransmitReQ = 0x01;
 			ModBusMasterEnableRS485Receive();
 		}
 		else {
-			Uart1_TxBuffer = Queue_DeQueue(&ModbusMaster_TX_Queue);
+			Uart1_TxBuffer = Queue_DeQueue(&modbus_master_tx_queue);
 			HAL_UART_Transmit_IT(&huart1, &Uart1_TxBuffer, 1);
 		}
 		

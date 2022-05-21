@@ -3,7 +3,7 @@
 <title>Static Call Graph - [ModBus_RTU_Master_v1.0\ModBus_RTU_Master_v1.0]</title></head>
 <body><HR>
 <H1>Static Call Graph for image ModBus_RTU_Master_v1.0\ModBus_RTU_Master_v1.0</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Sun May 08 18:17:03 2022
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Sat May 21 15:27:30 2022
 <BR><P>
 <H3>Maximum Stack Usage =        136 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -453,9 +453,9 @@ Global Symbols
 <P><STRONG><a name="[4f]"></a>HAL_Init</STRONG> (Thumb, 32 bytes, Stack size 8 bytes, stm32f1xx_hal.o(i.HAL_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = HAL_Init &rArr; HAL_InitTick &rArr; HAL_NVIC_SetPriority
 </UL>
-<BR>[Calls]<UL><LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_MspInit
-<LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_InitTick
+<BR>[Calls]<UL><LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_InitTick
 <LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_NVIC_SetPriorityGrouping
+<LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_MspInit
 </UL>
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
@@ -536,8 +536,8 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[5d]"></a>HAL_UART_ErrorCallback</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, stm32f1xx_hal_uart.o(i.HAL_UART_ErrorCallback))
-<BR><BR>[Called By]<UL><LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_IRQHandler
-<LI><a href="#[38]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_DMAAbortOnError
+<BR><BR>[Called By]<UL><LI><a href="#[38]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_DMAAbortOnError
+<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_IRQHandler
 </UL>
 
 <P><STRONG><a name="[59]"></a>HAL_UART_IRQHandler</STRONG> (Thumb, 266 bytes, Stack size 16 bytes, stm32f1xx_hal_uart.o(i.HAL_UART_IRQHandler))
@@ -707,7 +707,7 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ModbusMaster_ClearADU
 <LI><a href="#[7d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ModbusMaster_BeginTransmit
-<LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;crc16_update
+<LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;util_crc16_update
 <LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Queue_MakeNull
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Queue_IsFull
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Queue_IsEmpty
@@ -867,7 +867,7 @@ Global Symbols
 <H3>
 Local Symbols
 </H3>
-<P><STRONG><a name="[7b]"></a>crc16_update</STRONG> (Thumb, 28 bytes, Stack size 0 bytes, modbus_rtu_master.o(i.crc16_update))
+<P><STRONG><a name="[7b]"></a>util_crc16_update</STRONG> (Thumb, 28 bytes, Stack size 0 bytes, modbus_rtu_master.o(i.util_crc16_update))
 <BR><BR>[Called By]<UL><LI><a href="#[7a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ModbusMaster_Execute_Transaction
 </UL>
 

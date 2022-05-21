@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "mcu_application.h"
-#include "crc_16.h"
+#include "util.h"
 #include "word.h"
 #include "queue_circle_array.h"
 
@@ -22,8 +22,8 @@ extern  uint8_t 	u8ModBusStatus;
 extern volatile uint8_t 	ModbusMaster_CompleteTransmitReQ;
 
 
-extern struct_queue_array ModbusMaster_TX_Queue;
-extern struct_queue_array ModbusMaster_RX_Queue;
+extern struct_queue_array modbus_master_tx_queue;
+extern struct_queue_array modbus_master_rx_queue;
 
 
 
