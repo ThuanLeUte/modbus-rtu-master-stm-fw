@@ -1,6 +1,4 @@
-#include "modbus_rtu_master.h"
-
-extern UART_HandleTypeDef huart1;
+#include "modbus_master.h"
 
 #define MODBUS_STATUS_TRANSACTION_SUCCESS             (0x00)
 #define MODBUS_STATUS_INVALID_SLAVE_ID                (0xE0)
@@ -56,13 +54,13 @@ static uint32_t modbus_loop_timeout = 0;
 static uint8_t modbus_status = MODBUS_STATUS_TRANSACTION_SUCCESS;
 // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-void modbus_master_init(void)
+void modbus_master_init(modbus_master_t *me)
 {
   Queue_Initialize(&modbus_master_tx_queue, modbus_master_tx_buffer, sizeof(modbus_master_tx_buffer));
   Queue_Initialize(&modbus_master_rx_queue, modbus_master_rx_buffer, sizeof(modbus_master_rx_buffer));
 }
 
-void modbus_master_clear_adu(void)
+void modbus_master_clear_adu(modbus_master_t *me)
 {
   for (uint8_t k = 0; k < 128; k++)
   {
@@ -70,23 +68,12 @@ void modbus_master_clear_adu(void)
   }
 }
 
-uint32_t ModbusMaster_GetMillis(void)
-{
-  return HAL_GetTick();
-}
-
-void modbus_master_start_transmit(void)
-{
-  __HAL_UART_DISABLE_IT(&huart1, UART_IT_TXE); // disable transmit complete interrupts
-  __HAL_UART_ENABLE_IT(&huart1, UART_IT_TC);   // enable transmit complete interrupts
-}
-
-uint16_t modbus_master_get_response_buffer(uint8_t index)
+uint16_t modbus_master_get_response_buffer(modbus_master_t *me, uint8_t index)
 {
   return modbus_response_buffer[index];
 }
 
-uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
+uint8_t modbus_master_execute_transaction(modbus_master_t *me, uint8_t modbus_function)
 {
   modbus_adu_size = 0;
   i = 0;
@@ -219,18 +206,18 @@ uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
     }
   }
 
-  modbus_master_start_transmit();
-
+  me->bsp_uart_start_transmit();
+  
   while (modbus_complete_transmit_req == 0x00)
     ;
 
-  modbus_master_clear_adu();
+  modbus_master_clear_adu(me);
 
   modbus_status = MODBUS_STATUS_TRANSACTION_SUCCESS;
 
   modbus_adu_size = 0;
 
-  modbus_loop_timeout = ModbusMaster_GetMillis();
+  modbus_loop_timeout = me->bsp_get_tick();
 
   while (modbus_adu_size < 3)
   {
@@ -265,7 +252,7 @@ uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
       }
     }
 
-    if ((ModbusMaster_GetMillis() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
+    if ((me->bsp_get_tick() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
     {
       modbus_status = MODBUS_STATUS_EXPIRED_TIMEOUT;
       return modbus_status;
@@ -312,7 +299,7 @@ uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
       //"idle();"
     }
 
-    if ((ModbusMaster_GetMillis() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
+    if ((me->bsp_get_tick() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
     {
       modbus_status = MODBUS_STATUS_EXPIRED_TIMEOUT;
       return modbus_status;
@@ -368,7 +355,7 @@ uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
     }
   }
 
-  if ((ModbusMaster_GetMillis() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
+  if ((me->bsp_get_tick() - modbus_loop_timeout) > MODBUS_RESPONSE_TIMEOUT && modbus_status == MODBUS_STATUS_TRANSACTION_SUCCESS)
   {
     modbus_status = MODBUS_STATUS_EXPIRED_TIMEOUT;
     return modbus_status;
@@ -377,39 +364,39 @@ uint8_t modbus_master_execute_transaction(uint8_t modbus_function)
   return modbus_status;
 }
 
-uint8_t modbus_master_read_coils(uint8_t slave_id, uint16_t read_addr, uint16_t size) // 0x01
+uint8_t modbus_master_read_coils(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_read_addr = read_addr;
   modbus_read_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_READ_COILS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_READ_COILS);
 }
 
-uint8_t modbus_master_read_discrete_input(uint8_t slave_id, uint16_t read_addr, uint16_t size) // 0x02
+uint8_t modbus_master_read_discrete_input(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_read_addr = read_addr;
   modbus_read_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_READ_DISCRETE_INPUTS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_READ_DISCRETE_INPUTS);
 }
 
-uint8_t modbus_master_read_holding_register(uint8_t slave_id, uint16_t read_addr, uint16_t size) // 0x03
+uint8_t modbus_master_read_holding_register(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_read_addr = read_addr;
   modbus_read_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_READ_HOLDING_REGISTERS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_READ_HOLDING_REGISTERS);
 }
 
-uint8_t modbus_master_read_input_register(uint8_t slave_id, uint16_t read_addr, uint16_t size) // 0x04
+uint8_t modbus_master_read_input_register(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_read_addr = read_addr;
   modbus_read_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_READ_INPUT_REGISTERS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_READ_INPUT_REGISTERS);
 }
 
-uint8_t modbus_master_write_single_coil(uint8_t slave_id, uint16_t write_addr, uint8_t state) // 0x05
+uint8_t modbus_master_write_single_coil(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint8_t state)
 {
   modbus_slave_id = slave_id;
   modbus_write_addr = write_addr;
@@ -421,50 +408,50 @@ uint8_t modbus_master_write_single_coil(uint8_t slave_id, uint16_t write_addr, u
   {
     modbus_write_quantity = 0x0000;
   }
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_WRITE_SINGLE_COIL);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_WRITE_SINGLE_COIL);
 }
 
-uint8_t modbus_master_write_single_register(uint8_t slave_id, uint16_t write_addr, uint16_t value) // 0x06
+uint8_t modbus_master_write_single_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t value)
 {
   modbus_slave_id = slave_id;
   modbus_write_addr = write_addr;
   modbus_write_quantity = 0;
   modbus_transmit_buffer[0] = value;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_WRITE_SINGLE_REGISTER);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_WRITE_SINGLE_REGISTER);
 }
 
-uint8_t modbus_master_write_mutiple_coils(uint8_t slave_id, uint16_t write_addr, uint16_t size) // 0x0F
+uint8_t modbus_master_write_mutiple_coils(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_write_addr = write_addr;
   modbus_write_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_WRITE_MUTIPLE_COILS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_WRITE_MUTIPLE_COILS);
 }
 
-uint8_t modbus_master_write_mutiple_register(uint8_t slave_id, uint16_t write_addr, uint16_t size) // 0x10
+uint8_t modbus_master_write_mutiple_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t size)
 {
   modbus_slave_id = slave_id;
   modbus_write_addr = write_addr;
   modbus_write_quantity = size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS);
 }
 
-uint8_t modbus_master_mask_write_register(uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask) // 0x16
+uint8_t modbus_master_mask_write_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask)
 {
   modbus_slave_id = slave_id;
   modbus_write_addr = write_addr;
   modbus_transmit_buffer[0] = and_mask;
   modbus_transmit_buffer[1] = or_mask;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_MASK_WRITE_REGISTERS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_MASK_WRITE_REGISTERS);
 }
 
-uint8_t modbus_maste_read_mutiple_registers(uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
-                                                uint16_t write_addr, uint16_t write_size) // 0x17
+uint8_t modbus_maste_read_mutiple_registers(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
+                                                uint16_t write_addr, uint16_t write_size)
 {
   modbus_slave_id = slave_id;
   modbus_read_addr = read_addr;
   modbus_read_quantity = read_size;
   modbus_write_addr = write_addr;
   modbus_write_quantity = write_size;
-  return modbus_master_execute_transaction(MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS);
+  return modbus_master_execute_transaction(me, MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS);
 }

@@ -27,7 +27,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32f1xx_it.h"
-#include "modbus_rtu_master.h"
+#include "modbus_master.h"
+#include "bsp.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -46,6 +47,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+modbus_master_t modbus;
 
 /* USER CODE END PM */
 
@@ -66,16 +68,11 @@ uint16_t Error = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void SystemClock_Config(void);
-void modbus_master_start_transmit(void);
 void ModBusMasterEnableRS485Transmit(void);
 void ModBusMasterDisableRS485Transmit(void);
 void ModBusMasterEnableRS485Receive(void);
 void ModBusMasterDisableRS485Receive(void);
-void test1(void);
 void test2(void);
-void putstring_float_debug(void);
-void putstring_int_debug(void);
 
 /* USER CODE END PFP */
 
@@ -116,14 +113,13 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-	
-	HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
-	modbus_master_init();
-	modbus_complete_transmit_req = 0x00;
-	
-	
-	//test1();
-	
+
+  HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
+  modbus.bsp_get_tick = bsp_get_tick;
+  modbus.bsp_uart_start_transmit = bsp_uart_start_transmit;
+  modbus_master_init(&modbus);
+  modbus_complete_transmit_req = 0x00;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -134,18 +130,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		data[0] = 0;
-		data[1] = 0;
-		data[2] = 0;
-		data[3] = 0;
-		data[4] = 0;
-		data[5] = 0;
-		data[6] = 0;
-		data[7] = 0;
-		test2();
-		//putstring_float_debug();
-		//putstring_int_debug();
-		
+    data[0] = 0;
+    data[1] = 0;
+    data[2] = 0;
+    data[3] = 0;
+    data[4] = 0;
+    data[5] = 0;
+    data[6] = 0;
+    data[7] = 0;
+    test2();
   }
   /* USER CODE END 3 */
 }
@@ -188,128 +181,110 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void putstring_float_debug(void){
-	sprintf(buffer, "Float Val: %f\r\n", (float)data[0]);
-	len = strlen(buffer);	
-	HAL_UART_Transmit(&huart3, (uint8_t *)buffer, len, 50);
+void test2(void)
+{
+
+  uint32_t temp = 0;
+
+  ModBusMasterDisableRS485Receive();
+  ModBusMasterEnableRS485Transmit();
+  if (modbus_master_read_input_register(&modbus, 0x01, 0x0000, 0x0008) == 0x00)
+  {
+    data[0] = modbus_master_get_response_buffer(&modbus, 0);
+    data[1] = modbus_master_get_response_buffer(&modbus, 1);
+    data[2] = modbus_master_get_response_buffer(&modbus, 2);
+    data[3] = modbus_master_get_response_buffer(&modbus, 3);
+    data[4] = modbus_master_get_response_buffer(&modbus, 4);
+    data[5] = modbus_master_get_response_buffer(&modbus, 5);
+    data[6] = modbus_master_get_response_buffer(&modbus, 6);
+    data[7] = modbus_master_get_response_buffer(&modbus, 7);
+  }
+  else
+  {
+    Error++;
+  }
+
+  temp = data[1] | 0x00000000;
+  temp = data[0] | (temp << 16);
+  V1N = *(float *)&temp;
+
+  temp = data[3] | 0x00000000;
+  temp = data[2] | (temp << 16);
+  V2N = *(float *)&temp;
+
+  temp = data[5] | 0x00000000;
+  temp = data[4] | (temp << 16);
+  V3N = *(float *)&temp;
+
+  temp = data[7] | 0x00000000;
+  temp = data[6] | (temp << 16);
+  VAvg = *(float *)&temp;
+
+  sprintf(buffer, "V1N: %3.2f VAC - V2N: %3.2f VAC - V3N: %3.2f VAC - VAvg: %3.2f VAC - ResDelay: 200ms - Error: %d\r\n", V1N, V2N, V3N, VAvg, Error);
+  len = strlen(buffer);
+  HAL_UART_Transmit(&huart3, (uint8_t *)buffer, len, 100);
+
+  HAL_Delay(200);
 }
 
-void putstring_int_debug(void){
-	sprintf(buffer, "Int Val: %d\r\n", data[0]);
-	len = strlen(buffer);	
-	HAL_UART_Transmit(&huart3, (uint8_t *)buffer, len, 50);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+  if (huart->Instance == huart1.Instance)
+  {
+    HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
+    if (Queue_IsFull(&modbus_master_rx_queue) == 0)
+    {
+      Queue_EnQueue(&modbus_master_rx_queue, Uart1_RxBuffer);
+    }
+    else
+    {
+      //"idle();"
+    }
+  }
 }
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
 
-void test1(void){
-	ModBusMasterDisableRS485Receive();
-	ModBusMasterEnableRS485Transmit();
-	if(modbus_master_read_holding_register(0x01, 0x0008, 0x0001) == 0x00){
-		data[0] = modbus_master_get_response_buffer(0);
-	}
-	HAL_Delay(100);
+  if (huart->Instance == huart1.Instance)
+  {
+
+    if (Queue_IsEmpty(&modbus_master_tx_queue) == 1)
+    {
+      //"idle()"
+      // ModBusMasterDisableRS485Transmit();
+      modbus_complete_transmit_req = 0x01;
+      ModBusMasterEnableRS485Receive();
+    }
+    else
+    {
+      Uart1_TxBuffer = Queue_DeQueue(&modbus_master_tx_queue);
+      HAL_UART_Transmit_IT(&huart1, &Uart1_TxBuffer, 1);
+    }
+  }
 }
 
-void test2(void){
-	
-	uint32_t temp = 0;
-	
-	ModBusMasterDisableRS485Receive();
-	ModBusMasterEnableRS485Transmit();
-	if(modbus_master_read_input_register(0x01, 0x0000, 0x0008) == 0x00){
-		data[0] = modbus_master_get_response_buffer(0);
-		data[1] = modbus_master_get_response_buffer(1);
-		data[2] = modbus_master_get_response_buffer(2);
-		data[3] = modbus_master_get_response_buffer(3);
-		data[4] = modbus_master_get_response_buffer(4);
-		data[5] = modbus_master_get_response_buffer(5);
-		data[6] = modbus_master_get_response_buffer(6);
-		data[7] = modbus_master_get_response_buffer(7);
-	}
-	else {
-		Error++;
-	}
-	
-	temp = data[1] | 0x00000000;
-	temp = data[0] | (temp << 16);
-	V1N  = *(float*)&temp;
-	
-	temp = data[3] | 0x00000000;
-	temp = data[2] | (temp << 16);
-	V2N  = *(float*)&temp;
-	
-	temp = data[5] | 0x00000000;
-	temp = data[4] | (temp << 16);
-	V3N  = *(float*)&temp;
-	
-	temp = data[7] | 0x00000000;
-	temp = data[6] | (temp << 16);
-	VAvg = *(float*)&temp;
-	
-	
-	sprintf(buffer, "V1N: %3.2f VAC - V2N: %3.2f VAC - V3N: %3.2f VAC - VAvg: %3.2f VAC - ResDelay: 200ms - Error: %d\r\n", V1N, V2N, V3N, VAvg, Error);
-	len = strlen(buffer);	
-	HAL_UART_Transmit(&huart3, (uint8_t *)buffer, len, 100);
-	
-	HAL_Delay(200);
+void ModBusMasterEnableRS485Transmit(void)
+{
+  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
 }
 
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	
-	if(huart->Instance == huart1.Instance){
-		HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
-		if(Queue_IsFull(&modbus_master_rx_queue) == 0){
-			Queue_EnQueue(&modbus_master_rx_queue, Uart1_RxBuffer);
-			
-		}
-		else {
-			//"idle();"
-		}
-	}
-  
-} 
-	
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
-	
-	if(huart->Instance == huart1.Instance){
-		
-		if(Queue_IsEmpty(&modbus_master_tx_queue) == 1){
-			//"idle()"
-			//ModBusMasterDisableRS485Transmit();
-			modbus_complete_transmit_req = 0x01;
-			ModBusMasterEnableRS485Receive();
-		}
-		else {
-			Uart1_TxBuffer = Queue_DeQueue(&modbus_master_tx_queue);
-			HAL_UART_Transmit_IT(&huart1, &Uart1_TxBuffer, 1);
-		}
-		
-	}
-	
+void ModBusMasterDisableRS485Transmit(void)
+{
+  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_RESET);
 }
 
-
-
-void ModBusMasterEnableRS485Transmit(void){
-	HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
+void ModBusMasterEnableRS485Receive(void)
+{
+  HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
 }
 
-void ModBusMasterDisableRS485Transmit(void){
-	HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_RESET);
+void ModBusMasterDisableRS485Receive(void)
+{
+  HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_SET);
 }
-
-void ModBusMasterEnableRS485Receive(void){
-	HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
-}
-
-void ModBusMasterDisableRS485Receive(void){
-	HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_SET);
-}
-
-
 
 /* USER CODE END 4 */
 

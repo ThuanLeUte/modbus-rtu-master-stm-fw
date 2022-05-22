@@ -15,7 +15,7 @@
 #define __UTIL_H
 
 /* Includes ----------------------------------------------------------- */
-#include "mcu_application.h"
+#include "bsp.h"
 
 /* Public defines ----------------------------------------------------- */
 #define LOW_BYTE(word)                    (word & 0x00FF)

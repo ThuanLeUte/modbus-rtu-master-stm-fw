@@ -1,7 +1,5 @@
 #include "queue_circle_array.h"
 
-//#include <stdbool.h>
-
 uint8_t Queue_Initialize(struct_queue_array *queue, queue_data_type *array, uint16_t queueSize)
 {
   if (queue == 0 || array == 0 || queueSize == 0)
@@ -13,11 +11,13 @@ uint8_t Queue_Initialize(struct_queue_array *queue, queue_data_type *array, uint
   queue->rear = 0;
   return RET_TRUE;
 }
+
 void Queue_MakeNull(struct_queue_array *queue)
 {
   queue->front = 0;
   queue->rear = 0;
 }
+
 uint8_t Queue_IsEmpty(struct_queue_array *queue)
 {
   return queue->rear == 0;
