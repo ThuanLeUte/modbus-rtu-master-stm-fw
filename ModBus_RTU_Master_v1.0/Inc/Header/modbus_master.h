@@ -26,7 +26,7 @@ extern "C" {
 /* Private macros ----------------------------------------------------- */
 /* Public defines ----------------------------------------------------- */
 /* Public variables --------------------------------------------------- */
-extern volatile uint8_t modbus_complete_transmit_req;
+extern volatile bool modbus_complete_transmit_req;
 extern struct_queue_array modbus_master_tx_queue;
 extern struct_queue_array modbus_master_rx_queue;
 

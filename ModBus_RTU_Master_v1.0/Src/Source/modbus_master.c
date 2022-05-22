@@ -30,7 +30,7 @@
 /* Public variables --------------------------------------------------- */
 struct_queue_array modbus_master_tx_queue;
 struct_queue_array modbus_master_rx_queue;
-volatile uint8_t modbus_complete_transmit_req = 0;
+volatile bool modbus_complete_transmit_req = false;
 
 /* Private variables -------------------------------------------------- */
 static struct
@@ -183,7 +183,7 @@ uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master
   // End of setup ADU frame ========================================}
 
   Queue_MakeNull(&modbus_master_rx_queue);
-  modbus_complete_transmit_req = 0x00;
+  modbus_complete_transmit_req = false;
 
   for (i = 0; i < modbus_master.adu_size; i++)
   {
@@ -193,7 +193,7 @@ uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master
 
   // Start and wait transmit completed
   modbus->bsp_uart_start_transmit();
-  while (modbus_complete_transmit_req == 0x00)
+  while (modbus_complete_transmit_req == false)
     ;
 
   // Clear Application Data Unit

@@ -112,7 +112,7 @@ int main(void)
   modbus.bsp_get_tick = bsp_get_tick;
   modbus.bsp_uart_start_transmit = bsp_uart_start_transmit;
   modbus_master_init(&modbus);
-  modbus_complete_transmit_req = 0x00;
+  modbus_complete_transmit_req = false;
 
   /* USER CODE END 2 */
 
@@ -236,7 +236,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   {
     if (Queue_IsEmpty(&modbus_master_tx_queue) == 1)
     {
-      modbus_complete_transmit_req = 0x01;
+      modbus_complete_transmit_req = true;
       bsp_rs485_enable_receive(true);
     }
     else
