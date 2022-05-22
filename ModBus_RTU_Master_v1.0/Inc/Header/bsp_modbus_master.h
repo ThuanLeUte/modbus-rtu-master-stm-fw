@@ -1,74 +1,39 @@
 /**
- * @file       bsp.h
+ * @file       bsp_modbus_master.h
  * @copyright  Copyright (C) 2020 Hydratech. All rights reserved.
  * @license    This project is released under the Hydratech License.
  * @version    1.0.0
- * @date       2021-01-23
+ * @date       2022-05-22
  * @author     Thuan Le
- * @brief      Board Support Package (BSP)
+ * @brief      Board Support Package Modbus Master
  * @note       None
  * @example    None
  */
 
 /* Define to prevent recursive inclusion ------------------------------ */
-#ifndef __BSP_H
-#define __BSP_H
+#ifndef __BSP_MODBUS_MASTER_H
+#define __BSP_MODBUS_MASTER_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ----------------------------------------------------------- */
-#include "stm32f1xx_hal.h"
+#include "modbus_master.h"
 
 /* Public defines ----------------------------------------------------- */
 /* Public enumerate/structure ----------------------------------------- */
-/**
- * @brief Base status structure
- */
-typedef enum
-{
-  BS_OK = 0x00,
-  BS_ERROR_PARAMS,
-  BS_ERROR
-}
-base_status_t;
-
-/**
- * @brief Bool structure
- */
-typedef enum
-{
-  BS_FALSE = 0x00,
-  BS_TRUE  = 0x01
-}
-bool_t;
-
 /* Public macros ------------------------------------------------------ */
-#define CHECK(expr, ret)            \
-  do {                              \
-    if (!(expr)) {                  \
-      return (ret);                 \
-    }                               \
-  } while (0)
-
-#define CHECK_STATUS(expr)          \
-  do {                              \
-    base_status_t ret = (expr);     \
-    if (BS_OK != ret) {             \
-      return (ret);                 \
-    }                               \
-  } while (0)
-
 /* Public variables --------------------------------------------------- */
 /* Public function prototypes ----------------------------------------- */
-uint32_t bsp_get_tick(void);
-void bsp_uart_start_transmit(void);
+void bsp_modbus_master_init(void);
+uint8_t bsp_modbus_master_read_input_register(uint8_t slave_id, uint16_t read_addr, uint16_t size);
+uint16_t bsp_modbus_master_get_response_buffer(uint8_t index);
 
 /* -------------------------------------------------------------------------- */
 #ifdef __cplusplus
 } // extern "C"
 #endif
-#endif // __BSP_H
+#endif // __BSP_MODBUS_MASTER_H
 
 /* End of file -------------------------------------------------------- */

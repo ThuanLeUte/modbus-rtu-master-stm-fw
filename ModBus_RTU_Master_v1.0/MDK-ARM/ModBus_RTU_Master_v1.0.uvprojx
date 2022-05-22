@@ -438,6 +438,11 @@
               <FileType>1</FileType>
               <FilePath>..\Src\Source\modbus_master.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_modbus_master.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\Source\bsp_modbus_master.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

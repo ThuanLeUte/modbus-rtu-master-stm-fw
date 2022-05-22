@@ -9,6 +9,7 @@
 "modbus_rtu_master_v1.0\stm32f1xx_hal_msp.o"
 "modbus_rtu_master_v1.0\bsp.o"
 "modbus_rtu_master_v1.0\modbus_master.o"
+"modbus_rtu_master_v1.0\bsp_modbus_master.o"
 "modbus_rtu_master_v1.0\stm32f1xx_hal_gpio_ex.o"
 "modbus_rtu_master_v1.0\stm32f1xx_hal_tim.o"
 "modbus_rtu_master_v1.0\stm32f1xx_hal_tim_ex.o"

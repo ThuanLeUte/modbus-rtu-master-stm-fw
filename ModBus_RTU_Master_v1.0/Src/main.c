@@ -27,7 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32f1xx_it.h"
-#include "modbus_master.h"
+#include "bsp_modbus_master.h"
 #include "bsp.h"
 #include <stdio.h>
 #include <string.h>
@@ -44,9 +44,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
-modbus_master_t modbus;
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -107,13 +104,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
   HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
-  modbus.bsp_get_tick = bsp_get_tick;
-  modbus.bsp_uart_start_transmit = bsp_uart_start_transmit;
-  modbus_master_init(&modbus);
-  modbus_complete_transmit_req = false;
-
+  bsp_modbus_master_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -181,16 +173,16 @@ void test2(void)
 
   bsp_rs485_enable_receive(false);
   bsp_rs485_enable_transmit(true);
-  if (modbus_master_read_input_register(&modbus, 0x01, 0x0000, 0x0008) == 0x00)
+  if (bsp_modbus_master_read_input_register(0x01, 0x0000, 0x0008) == 0x00)
   {
-    data[0] = modbus_master_get_response_buffer(&modbus, 0);
-    data[1] = modbus_master_get_response_buffer(&modbus, 1);
-    data[2] = modbus_master_get_response_buffer(&modbus, 2);
-    data[3] = modbus_master_get_response_buffer(&modbus, 3);
-    data[4] = modbus_master_get_response_buffer(&modbus, 4);
-    data[5] = modbus_master_get_response_buffer(&modbus, 5);
-    data[6] = modbus_master_get_response_buffer(&modbus, 6);
-    data[7] = modbus_master_get_response_buffer(&modbus, 7);
+    data[0] = bsp_modbus_master_get_response_buffer(0);
+    data[1] = bsp_modbus_master_get_response_buffer(1);
+    data[2] = bsp_modbus_master_get_response_buffer(2);
+    data[3] = bsp_modbus_master_get_response_buffer(3);
+    data[4] = bsp_modbus_master_get_response_buffer(4);
+    data[5] = bsp_modbus_master_get_response_buffer(5);
+    data[6] = bsp_modbus_master_get_response_buffer(6);
+    data[7] = bsp_modbus_master_get_response_buffer(7);
   }
   else
   {

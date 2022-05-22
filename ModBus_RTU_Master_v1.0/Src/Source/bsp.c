@@ -4,7 +4,7 @@
  * @copyright  Copyright (C) 2020 Hydratech. All rights reserved.
  * @license    This project is released under the Hydratech License.
  * @version    1.0.0
- * @date       2021-01-23
+ * @date       2022-05-22
  * @author     Thuan Le
  * @brief      Board Support Package (BSP)
  * 
