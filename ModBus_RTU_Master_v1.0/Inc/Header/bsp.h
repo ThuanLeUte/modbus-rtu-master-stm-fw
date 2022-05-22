@@ -20,6 +20,8 @@ extern "C" {
 
 /* Includes ----------------------------------------------------------- */
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "stm32f1xx_hal.h"
 
 /* Public defines ----------------------------------------------------- */
@@ -65,6 +67,8 @@ bool_t;
 /* Public function prototypes ----------------------------------------- */
 uint32_t bsp_get_tick(void);
 void bsp_uart_start_transmit(void);
+void bsp_rs485_enable_transmit(bool enable);
+void bsp_rs485_enable_receive(bool enable);
 
 /* -------------------------------------------------------------------------- */
 #ifdef __cplusplus

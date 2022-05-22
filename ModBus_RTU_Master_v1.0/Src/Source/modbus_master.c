@@ -48,6 +48,7 @@ static struct
   uint16_t write_addr;
   uint16_t write_quantity;
 }
+modbus_master;
 
 /* Private function prototypes ---------------------------------------- */
 uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master_function_t modbus_function);

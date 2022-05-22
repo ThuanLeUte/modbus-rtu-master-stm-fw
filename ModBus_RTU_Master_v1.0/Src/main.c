@@ -40,8 +40,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RS485_EnableDIPin											GPIO_PIN_11
-#define RS485_EnableROPin											GPIO_PIN_12
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,10 +66,6 @@ uint16_t Error = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void ModBusMasterEnableRS485Transmit(void);
-void ModBusMasterDisableRS485Transmit(void);
-void ModBusMasterEnableRS485Receive(void);
-void ModBusMasterDisableRS485Receive(void);
 void test2(void);
 
 /* USER CODE END PFP */
@@ -185,8 +179,8 @@ void test2(void)
 {
   uint32_t temp = 0;
 
-  ModBusMasterDisableRS485Receive();
-  ModBusMasterEnableRS485Transmit();
+  bsp_rs485_enable_receive(false);
+  bsp_rs485_enable_transmit(true);
   if (modbus_master_read_input_register(&modbus, 0x01, 0x0000, 0x0008) == 0x00)
   {
     data[0] = modbus_master_get_response_buffer(&modbus, 0);
@@ -243,7 +237,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     if (Queue_IsEmpty(&modbus_master_tx_queue) == 1)
     {
       modbus_complete_transmit_req = 0x01;
-      ModBusMasterEnableRS485Receive();
+      bsp_rs485_enable_receive(true);
     }
     else
     {
@@ -252,28 +246,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
   }
 }
-
-void ModBusMasterEnableRS485Transmit(void)
-{
-  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
-}
-
-void ModBusMasterDisableRS485Transmit(void)
-{
-  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_RESET);
-}
-
-void ModBusMasterEnableRS485Receive(void)
-{
-  HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA, RS485_EnableDIPin, GPIO_PIN_SET);
-}
-
-void ModBusMasterDisableRS485Receive(void)
-{
-  HAL_GPIO_WritePin(GPIOA, RS485_EnableROPin, GPIO_PIN_SET);
-}
-
 /* USER CODE END 4 */
 
 /**
