@@ -5,7 +5,7 @@
  * @version    1.0.0
  * @date       2021-04-09
  * @author     Thuan Le
- * @brief      Driver support modbus master
+ * @brief      Driver support Modbus Master
  * @note       None
  * @example    None
  */
@@ -26,15 +26,6 @@ extern "C" {
 /* Private macros ----------------------------------------------------- */
 /* Public defines ----------------------------------------------------- */
 /* Public variables --------------------------------------------------- */
-extern uint8_t modbus_adu[128];
-extern uint8_t modbus_adu_size;
-extern uint8_t i;
-extern uint8_t quantity;
-extern uint16_t crc16;
-extern uint8_t byte_left;
-extern uint32_t modbus_loop_timeout;
-extern uint8_t modbus_status;
-
 extern volatile uint8_t modbus_complete_transmit_req;
 extern struct_queue_array modbus_master_tx_queue;
 extern struct_queue_array modbus_master_rx_queue;
@@ -50,22 +41,38 @@ typedef struct
 }
 modbus_master_t;
 
-/* Public function prototypes ----------------------------------------- */
-void modbus_master_init(modbus_master_t *me);
-void modbus_master_clear_adu(modbus_master_t *me);
-uint16_t modbus_master_get_response_buffer(modbus_master_t *me, uint8_t index);
-uint8_t modbus_master_execute_transaction(modbus_master_t *me, uint8_t modbus_function);
+/**
+ * @brief Modbus master function enum
+ */
+typedef enum
+{
+   MODBUS_FUNCTION_READ_COILS                   = (0x01) // Modbus function 0x01 Read Coils
+  ,MODBUS_FUNCTION_READ_DISCRETE_INPUTS         = (0x02) // Modbus function 0x02 Read Discrete Inputs
+  ,MODBUS_FUNCTION_READ_HOLDING_REGISTERS       = (0x03) // Modbus function 0x03 Read Holding Registers
+  ,MODBUS_FUNCTION_READ_INPUT_REGISTERS         = (0x04) // Modbus function 0x04 Read Input Registers
+  ,MODBUS_FUNCTION_WRITE_SINGLE_COIL            = (0x05) // Modbus function 0x05 Write Single Coil
+  ,MODBUS_FUNCTION_WRITE_SINGLE_REGISTER        = (0x06) // Modbus function 0x06 Write Single Register
+  ,MODBUS_FUNCTION_WRITE_MUTIPLE_COILS          = (0x0F) // Modbus function 0x0F Write Multiple Coils
+  ,MODBUS_FUNCTION_WRITE_MUTIPLE_REGISTERS      = (0x10) // Modbus function 0x10 Write Multiple Registers
+  ,MODBUS_FUNCTION_MASK_WRITE_REGISTERS         = (0x16) // Modbus function 0x16 Mask Write Register
+  ,MODBUS_FUNCTION_READ_WRITE_MUTIPLE_REGISTERS = (0x17) // Modbus function 0x17 Read Write Multiple Registers
+}
+modbus_master_function_t;
 
-uint8_t modbus_master_read_coils(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size);
-uint8_t modbus_master_read_discrete_input(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size);
-uint8_t modbus_master_read_holding_register(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size);
-uint8_t modbus_master_read_input_register(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t size);
-uint8_t modbus_master_write_single_coil(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint8_t state);
-uint8_t modbus_master_write_single_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t value);
-uint8_t modbus_master_write_mutiple_coils(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t size);
-uint8_t modbus_master_write_mutiple_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t size);
-uint8_t modbus_master_mask_write_register(modbus_master_t *me, uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask);
-uint8_t modbus_maste_read_mutiple_registers(modbus_master_t *me, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
+/* Public function prototypes ----------------------------------------- */
+void modbus_master_init(modbus_master_t *modbus);
+uint16_t modbus_master_get_response_buffer(modbus_master_t *modbus, uint8_t index);
+
+uint8_t modbus_master_read_coils(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);
+uint8_t modbus_master_read_discrete_input(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);
+uint8_t modbus_master_read_holding_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);
+uint8_t modbus_master_read_input_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);
+uint8_t modbus_master_write_single_coil(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint8_t state);
+uint8_t modbus_master_write_single_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t value);
+uint8_t modbus_master_write_mutiple_coils(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t size);
+uint8_t modbus_master_write_mutiple_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t size);
+uint8_t modbus_master_mask_write_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask);
+uint8_t modbus_maste_read_mutiple_registers(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
                                             uint16_t write_addr, uint16_t write_size);
 
 /* -------------------------------------------------------------------------- */

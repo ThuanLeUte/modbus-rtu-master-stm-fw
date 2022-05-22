@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "mcu_application.h": "c"
+        "mcu_application.h": "c",
+        "bsp.h": "c"
     }
 }

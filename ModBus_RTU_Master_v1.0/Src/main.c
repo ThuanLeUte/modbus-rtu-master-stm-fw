@@ -183,7 +183,6 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void test2(void)
 {
-
   uint32_t temp = 0;
 
   ModBusMasterDisableRS485Receive();
@@ -229,31 +228,20 @@ void test2(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-
   if (huart->Instance == huart1.Instance)
   {
     HAL_UART_Receive_IT(&huart1, &Uart1_RxBuffer, 1);
     if (Queue_IsFull(&modbus_master_rx_queue) == 0)
-    {
       Queue_EnQueue(&modbus_master_rx_queue, Uart1_RxBuffer);
-    }
-    else
-    {
-      //"idle();"
-    }
   }
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-
   if (huart->Instance == huart1.Instance)
   {
-
     if (Queue_IsEmpty(&modbus_master_tx_queue) == 1)
     {
-      //"idle()"
-      // ModBusMasterDisableRS485Transmit();
       modbus_complete_transmit_req = 0x01;
       ModBusMasterEnableRS485Receive();
     }
