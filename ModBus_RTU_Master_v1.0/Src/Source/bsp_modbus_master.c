@@ -32,14 +32,29 @@ void bsp_modbus_master_init(void)
   modbus_master_init(&modbus);
 }
 
-uint8_t bsp_modbus_master_read_input_register(uint8_t slave_id, uint16_t read_addr, uint16_t size)
-{
- return modbus_master_read_input_register(&modbus, slave_id, read_addr, size);
-}
-
 uint16_t bsp_modbus_master_get_response_buffer(uint8_t index)
 {
   return modbus_master_get_response_buffer(&modbus, index);
+}
+
+void bsp_modbus_master_clear_response_buffer(void)
+{
+  modbus_master_clear_response_buffer(&modbus);
+}
+
+void bsp_modbus_master_set_transmit_buffer(uint8_t index, uint16_t value)
+{
+  modbus_master_set_transmit_buffer(&modbus, index, value);
+}
+
+void bsp_modbus_master_clear_transmit_buffer(void)
+{
+  modbus_master_clear_transmit_buffer(&modbus);
+}
+
+uint8_t bsp_modbus_master_read_input_register(uint8_t slave_id, uint16_t read_addr, uint16_t size)
+{
+ return modbus_master_read_input_register(&modbus, slave_id, read_addr, size);
 }
 
 uint8_t bsp_modbus_master_read_coils(uint8_t slave_id, uint16_t read_addr, uint16_t size)

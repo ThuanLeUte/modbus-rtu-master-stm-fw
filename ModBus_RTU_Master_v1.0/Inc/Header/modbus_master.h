@@ -61,7 +61,11 @@ modbus_master_function_t;
 
 /* Public function prototypes ----------------------------------------- */
 void modbus_master_init(modbus_master_t *modbus);
+
 uint16_t modbus_master_get_response_buffer(modbus_master_t *modbus, uint8_t index);
+void modbus_master_clear_response_buffer(modbus_master_t *modbus);
+void modbus_master_set_transmit_buffer(modbus_master_t *modbus, uint8_t index, uint16_t value);
+void modbus_master_clear_transmit_buffer(modbus_master_t *modbus);
 
 uint8_t modbus_master_read_coils(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);
 uint8_t modbus_master_read_discrete_input(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t size);

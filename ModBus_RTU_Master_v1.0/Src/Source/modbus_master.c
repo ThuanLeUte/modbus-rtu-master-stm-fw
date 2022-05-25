@@ -51,8 +51,8 @@ static struct
 modbus_master;
 
 /* Private function prototypes ---------------------------------------- */
-uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master_function_t modbus_function);
-void modbus_master_clear_adu(modbus_master_t *modbus);
+static uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master_function_t modbus_function);
+static void modbus_master_clear_adu(modbus_master_t *modbus);
 
 /* Function definitions ----------------------------------------------- */
 void modbus_master_init(modbus_master_t *modbus)
@@ -61,7 +61,7 @@ void modbus_master_init(modbus_master_t *modbus)
   Queue_Initialize(&modbus_master_rx_queue, modbus_master.rx_buffer_queue, sizeof(modbus_master.rx_buffer_queue));
 }
 
-void modbus_master_clear_adu(modbus_master_t *modbus)
+static void modbus_master_clear_adu(modbus_master_t *modbus)
 {
   memset(modbus_master.adu, 0, sizeof(modbus_master.adu));
 }
@@ -71,7 +71,25 @@ uint16_t modbus_master_get_response_buffer(modbus_master_t *modbus, uint8_t inde
   return modbus_master.response_buffer[index];
 }
 
-uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master_function_t modbus_function)
+void modbus_master_clear_response_buffer(modbus_master_t *modbus)
+{
+  memset(modbus_master.response_buffer, 0, MODBUS_MASTER_RX_BUFFER_SIZE);
+}
+
+void modbus_master_set_transmit_buffer(modbus_master_t *modbus, uint8_t index, uint16_t value)
+{
+  if (index < MODBUS_MASTER_TX_BUFFER_SIZE)
+  {
+    modbus_master.transmit_buffer[index] = value;
+  }
+}
+
+void modbus_master_clear_transmit_buffer(modbus_master_t *modbus)
+{
+  memset(modbus_master.transmit_buffer, 0, MODBUS_MASTER_TX_BUFFER_SIZE);
+}
+
+static uint8_t modbus_master_execute_transaction(modbus_master_t *modbus, modbus_master_function_t modbus_function)
 {
   uint8_t  i                   = 0;
   uint8_t  quantity            = 0;
