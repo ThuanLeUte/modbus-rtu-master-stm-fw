@@ -26,15 +26,15 @@ void send_single_register(void)
 	bsp_rs485_enable_transmit(true);
 	
 	// slave_id: 0x01
-    // write_addr: 0x0000
-    // value: 14
+    	// write_addr: 0x0000
+    	// value: 14
 	if (bsp_modbus_master_write_single_register(0x01, 0x0000, 14) == 0x00)
   	{
  		// Write success
   	}
   	else
   	{
-    	// Write error
+    		// Write error
   	}
 }
 ```
@@ -51,16 +51,16 @@ void send_multiple_register(void)
 	bsp_modbus_master_set_transmit_buffer(2, 300);
 		
 	
-    // slave_id: 0x01
-    // write_addr: 0x0000
-    // size: 3
+    	// slave_id: 0x01
+    	// write_addr: 0x0000
+    	// size: 3
 	if (bsp_modbus_master_write_mutiple_register(0x01, 0x0000, 3) == 0x00)
   	{
  		// Write success
   	}
   	else
   	{
-    	// Write error
+    		// Write error
   	}
 }
 ```
