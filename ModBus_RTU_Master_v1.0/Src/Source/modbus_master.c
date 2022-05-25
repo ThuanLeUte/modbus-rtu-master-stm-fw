@@ -408,7 +408,7 @@ uint8_t modbus_master_mask_write_register(modbus_master_t *modbus, uint8_t slave
   return modbus_master_execute_transaction(modbus, MODBUS_FUNCTION_MASK_WRITE_REGISTERS);
 }
 
-uint8_t modbus_maste_read_mutiple_registers(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
+uint8_t modbus_master_read_mutiple_registers(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
                                             uint16_t write_addr, uint16_t write_size)
 {
   modbus_master.slave_id       = slave_id;

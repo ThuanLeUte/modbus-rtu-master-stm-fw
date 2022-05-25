@@ -72,7 +72,7 @@ uint8_t modbus_master_write_single_register(modbus_master_t *modbus, uint8_t sla
 uint8_t modbus_master_write_mutiple_coils(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t size);
 uint8_t modbus_master_write_mutiple_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t size);
 uint8_t modbus_master_mask_write_register(modbus_master_t *modbus, uint8_t slave_id, uint16_t write_addr, uint16_t and_mask, uint16_t or_mask);
-uint8_t modbus_maste_read_mutiple_registers(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
+uint8_t modbus_master_read_mutiple_registers(modbus_master_t *modbus, uint8_t slave_id, uint16_t read_addr, uint16_t read_size,
                                             uint16_t write_addr, uint16_t write_size);
 
 /* -------------------------------------------------------------------------- */
